@@ -1,7 +1,7 @@
 AI-Powered Fruit Ninja (Computer Vision Edition)
 A real-time, browser-based physics game that uses MediaPipe's Hand Tracking AI to turn your hand into a virtual blade. This project explores the intersection of Computer Vision, Kinematics, and WebGL rendering.
 🚀 Live Demo
-[INSERT YOUR GITHUB PAGES LINK HERE]
+[[INSERT YOUR GITHUB PAGES LINK HERE](https://devkev2k6.github.io/Fruit-Slice-Game/)]
 🛠️ The Tech Stack
 Language: JavaScript (ES6+)
 AI Framework: MediaPipe Hands
