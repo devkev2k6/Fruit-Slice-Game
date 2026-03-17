@@ -2,8 +2,8 @@
 
 A high-performance Augmented Reality (AR) experiment using **Computer Vision** to track hand movement and interact with physics-based objects in the browser.
 
-## 📺 [Live Demo Link]
-https://devkev2k6.github.io/Fruit-Slice-Game/
+## 📺 [Live Demo Link] 
+https://devkev2k6.github.io/Fruit-Slice-Game/index.html
 
 ---
 
