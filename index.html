@@ -2,36 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CV_FruitNinja_V1</title>
+    <title>CV_FruitNinja_Instant</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <style>
-        body { margin: 0; background: #111; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; }
         #video_input { display: none; }
         canvas { width: 100vw; height: 100vh; transform: scaleX(-1); }
-        
-        /* Dashboard Styling */
-        .game-ui { position: absolute; width: 100%; height: 100%; pointer-events: none; }
-        #prompt {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #fff; font-size: 1.5rem; background: rgba(0,0,0,0.7);
-            padding: 10px 20px; border: 1px solid #00ffcc; border-radius: 4px;
-            text-align: center;
-        }
-        .debug-data { position: absolute; top: 10px; left: 10px; color: #00ffcc; font-size: 12px; }
+        .debug-data { position: absolute; top: 10px; left: 10px; color: #00ffcc; font-size: 12px; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div class="game-ui">
-        <div id="prompt">WAVE HAND TO START</div>
-        <div class="debug-data">
-            STATUS: CV_LINK_OK<br>
-            ENGINE: CAN_V2<br>
-            SENSORS: INDEX_FING_TIP
-        </div>
-    </div>
-
+    <div class="debug-data">STATUS: CV_LIVE</div>
     <video id="video_input"></video>
     <canvas id="gameCanvas"></canvas>
 
@@ -39,17 +22,15 @@
         const v_in = document.getElementById('video_input');
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const promptTxt = document.getElementById('prompt');
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Config & Globals
         let activeFruits = [];
         let particles = [];
         let stroke = [];
         let prevPos = null;
-        let sx = 0, sy = 0; // Smooth coords
+        let sx = 0, sy = 0;
         const grav = 0.25;
 
         const TYPES = [
@@ -59,7 +40,6 @@
             { char: '🍉', col: '#33ff33' }
         ];
 
-        // --- Core Math ---
         function getDist(p1, p2, target) {
             let dx = p2.x - p1.x, dy = p2.y - p1.y;
             let t = ((target.x - p1.x) * dx + (target.y - p1.y) * dy) / (dx * dx + dy * dy);
@@ -67,7 +47,6 @@
             return Math.hypot(nearest.x - target.x, nearest.y - target.y);
         }
 
-        // --- Classes ---
         class Debris {
             constructor(x, y, vx, vy, icon, col, size, half, rot) {
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy;
@@ -81,10 +60,8 @@
                 this.r += this.spin; this.life -= 0.02;
             }
             render() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.r);
+                ctx.save(); ctx.globalAlpha = this.life;
+                ctx.translate(this.x, this.y); ctx.rotate(this.r);
                 if (this.half) {
                     ctx.font = `${this.sz}px serif`;
                     ctx.fillText(this.icon, -this.sz/2, 0);
@@ -99,107 +76,77 @@
         class Target {
             constructor() {
                 const conf = TYPES[Math.floor(Math.random() * TYPES.length)];
-                this.char = conf.char;
-                this.col = conf.col;
+                this.char = conf.char; this.col = conf.col;
                 this.x = Math.random() * (canvas.width - 200) + 100;
                 this.y = canvas.height + 50;
                 this.vx = (Math.random() - 0.5) * 7;
                 this.vy = -Math.random() * 14 - 11;
-                this.rad = 45;
-                this.angle = 0;
-                this.rs = (Math.random() - 0.5) * 0.1;
+                this.rad = 45; this.angle = 0; this.rs = (Math.random() - 0.5) * 0.1;
             }
-            step() {
-                this.vy += grav; this.x += this.vx; this.y += this.vy;
-                this.angle += this.rs;
-            }
+            step() { this.vy += grav; this.x += this.vx; this.y += this.vy; this.angle += this.rs; }
             render() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                ctx.font = `${this.rad * 2}px serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(this.char, 0, 0);
-                ctx.restore();
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+                ctx.font = `${this.rad * 2}px serif`; ctx.textAlign = "center";
+                ctx.textBaseline = "middle"; ctx.fillText(this.char, 0, 0); ctx.restore();
             }
             pop(angle) {
                 const pwr = 5;
                 particles.push(new Debris(this.x, this.y, this.vx + Math.cos(angle - 1.5) * pwr, this.vy + Math.sin(angle - 1.5) * pwr, this.char, this.col, this.rad, true, this.angle));
                 particles.push(new Debris(this.x, this.y, this.vx + Math.cos(angle + 1.5) * pwr, this.vy + Math.sin(angle + 1.5) * pwr, this.char, this.col, this.rad, true, this.angle));
-                for (let i = 0; i < 6; i++) {
-                    particles.push(new Debris(this.x, this.y, (Math.random()-0.5)*10, (Math.random()-0.5)*10, null, this.col, 5, false, 0));
-                }
+                for (let i = 0; i < 6; i++) particles.push(new Debris(this.x, this.y, (Math.random()-0.5)*10, (Math.random()-0.5)*10, null, this.col, 5, false, 0));
             }
         }
 
         function runCV(data) {
             ctx.drawImage(data.image, 0, 0, canvas.width, canvas.height);
 
-            // Hand check
-            if (!data.multiHandLandmarks || data.multiHandLandmarks.length === 0) {
-                promptTxt.style.display = "block";
-                stroke = [];
-                prevPos = null;
-            } else {
-                promptTxt.style.display = "none";
+            let nowPos = null;
+            if (data.multiHandLandmarks && data.multiHandLandmarks[0]) {
                 const tip = data.multiHandLandmarks[0][8];
-                
-                // smoothing loop
                 sx += (tip.x * canvas.width - sx) * 0.35;
                 sy += (tip.y * canvas.height - sy) * 0.35;
-                const nowPos = { x: sx, y: sy };
-                
+                nowPos = { x: sx, y: sy };
                 stroke.unshift({ ...nowPos });
                 if (stroke.length > 10) stroke.pop();
-
-                // Logic check
-                for (let i = activeFruits.length - 1; i >= 0; i--) {
-                    let f = activeFruits[i];
-                    f.step(); f.render();
-                    if (prevPos && getDist(prevPos, nowPos, f) < f.rad) {
-                        const hitAngle = Math.atan2(nowPos.y - prevPos.y, nowPos.x - prevPos.x);
-                        f.pop(hitAngle);
-                        activeFruits.splice(i, 1);
-                        console.log("Sliced: " + f.char);
-                    } else if (f.y > canvas.height + 100) {
-                        activeFruits.splice(i, 1);
-                    }
-                }
-                prevPos = { ...nowPos };
+            } else {
+                stroke = [];
             }
 
-            // Spawner & Particle cleanup
+            // Fruits update & collision
             if (Math.random() < 0.02 && activeFruits.length < 4) activeFruits.push(new Target());
+            for (let i = activeFruits.length - 1; i >= 0; i--) {
+                let f = activeFruits[i];
+                f.step(); f.render();
+                if (nowPos && prevPos && getDist(prevPos, nowPos, f) < f.rad) {
+                    f.pop(Math.atan2(nowPos.y - prevPos.y, nowPos.x - prevPos.x));
+                    activeFruits.splice(i, 1);
+                } else if (f.y > canvas.height + 100) {
+                    activeFruits.splice(i, 1);
+                }
+            }
+
+            // Particles
             for (let i = particles.length - 1; i >= 0; i--) {
                 particles[i].step(); particles[i].render();
                 if (particles[i].life <= 0) particles.splice(i, 1);
             }
 
-            // Blade line
+            // Blade
             if (stroke.length > 1) {
                 ctx.beginPath(); ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.strokeStyle = "#00ffcc";
                 ctx.moveTo(stroke[0].x, stroke[0].y);
                 for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i].x, stroke[i].y);
                 ctx.stroke();
             }
+            prevPos = nowPos;
         }
 
-        // Setup MediaPipe
         const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
         hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6 });
         hands.onResults(runCV);
-        
-        const cam = new Camera(v_in, { 
-            onFrame: async () => { await hands.send({image: v_in}); }, 
-            width: 1280, height: 720 
-        });
+        const cam = new Camera(v_in, { onFrame: async () => { await hands.send({image: v_in}); }, width: 1280, height: 720 });
         cam.start();
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
     </script>
 </body>
 </html>
